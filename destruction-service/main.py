@@ -25,7 +25,12 @@ async def destroy_planet(planet_id: int):
         response = requests.delete(f"{PLANET_SERVICE_URL}/planets/{planet_id}")
         
         if response.status_code == 200:
-            return {"message": f"Planet {planet_id} has been successfully destroyed!"}
+            data = response.json()
+            return {
+                "message": f"Planet {planet_id} has been successfully destroyed!",
+                "death_toll": data.get("death_toll", 0),
+                "total_deaths": f"{data.get('death_toll', 0):,} lives lost across the universe"
+            }
         else:
             raise HTTPException(status_code=response.status_code, detail="Failed to destroy planet")
     except Exception as e:

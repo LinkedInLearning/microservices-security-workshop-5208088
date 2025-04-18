@@ -170,12 +170,22 @@
                 opacity: 0;
             }
         }
+        .death-toll {
+            text-align: center;
+            font-size: 24px;
+            color: #ff4444;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #2d2d2d;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="notification-container" id="notificationContainer"></div>
     <div class="container">
         <h1>Planet Destroyer</h1>
+        <div class="death-toll" id="deathToll">Total Death Toll: 0 lives lost</div>
         <button class="create-btn" onclick="toggleCreateForm()">Create New Planet</button>
         <button class="reset-btn" onclick="resetPlanets()">Reset Planets</button>
         <div class="create-form" id="createForm">
@@ -290,11 +300,19 @@
         async function destroyPlanet(planetId) {
             try {
                 const response = await fetch(`${DESTRUCTION_SERVICE_URL}/destroy/${planetId}`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
-                const result = await response.json();
-                showNotification(result.message);
-                fetchPlanets(); // Refresh the list
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('deathToll').textContent = `Total Death Toll: ${data.total_deaths}`;
+                    showNotification(`${data.message} ${data.total_deaths}`, 'warning');
+                    fetchPlanets();
+                } else {
+                    showNotification('Error: ' + data.detail, 'error');
+                }
             } catch (error) {
                 console.error('Error destroying planet:', error);
                 showNotification('Failed to destroy planet', 'error');
