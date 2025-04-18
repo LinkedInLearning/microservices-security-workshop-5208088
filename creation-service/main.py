@@ -15,8 +15,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Hardcoded planet service URL (vulnerability: no environment variables)
-PLANET_SERVICE_URL = "http://localhost:8000"
+# Use Docker service name instead of localhost
+PLANET_SERVICE_URL = "http://planet-service:8000"
 
 class PlanetCreate(BaseModel):
     name: str

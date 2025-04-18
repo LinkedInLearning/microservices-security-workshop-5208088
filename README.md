@@ -11,6 +11,23 @@ A demonstration of various security vulnerabilities in a microservices architect
 
 ## Setup
 
+### Option 1: Using Docker (Recommended)
+
+1. Make sure you have Docker and Docker Compose installed on your system.
+
+2. Build and start all services:
+```bash
+docker-compose up --build
+```
+
+3. Access the application:
+   - Frontend: http://localhost:3000
+   - Planet Service: http://localhost:8000
+   - Destruction Service: http://localhost:8001
+   - Creation Service: http://localhost:8002
+
+### Option 2: Manual Setup
+
 1. Create and activate a virtual environment (recommended):
 ```bash
 python -m venv venv
@@ -37,6 +54,8 @@ pip install -r requirements.txt
 ```
 
 ## Running the Services
+
+### Manual Setup Instructions
 
 You'll need to start each service in a separate terminal window:
 

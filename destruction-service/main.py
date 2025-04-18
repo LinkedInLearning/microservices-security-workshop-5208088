@@ -14,8 +14,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Hardcoded planet service URL (vulnerability: no environment variables)
-PLANET_SERVICE_URL = "http://localhost:8000"
+# Use Docker service name instead of localhost
+PLANET_SERVICE_URL = "http://planet-service:8000"
 
 @app.post("/destroy/{planet_id}")
 async def destroy_planet(planet_id: int):

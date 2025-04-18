@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  planet-service:
+    build: ./planet-service
+    ports:
+      - "8000:8000"
+    networks:
+      - insecure-microservices
+
+  destruction-service:
+    build: ./destruction-service
+    ports:
+      - "8001:8001"
+    networks:
+      - insecure-microservices
+
+  creation-service:
+    build: ./creation-service
+    ports:
+      - "8002:8002"
+    networks:
+      - insecure-microservices
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - insecure-microservices
+
+networks:
+  insecure-microservices:
+    driver: bridge 
