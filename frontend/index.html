@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planet Destroyer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #ff4444;
+        }
+        .planets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .planet-card {
+            background-color: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .planet-card:hover {
+            transform: scale(1.05);
+        }
+        .planet-name {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #4fc3f7;
+        }
+        .planet-details {
+            margin: 10px 0;
+        }
+        .destroy-btn {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .destroy-btn:hover {
+            background-color: #cc0000;
+        }
+        .create-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin: 10px;
+        }
+        .create-btn:hover {
+            background-color: #45a049;
+        }
+        .reset-btn {
+            background-color: #ffbb33;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin: 10px;
+        }
+        .reset-btn:hover {
+            background-color: #ff8800;
+        }
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #2d2d2d;
+            color: white;
+        }
+        .create-form {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .create-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .create-form button {
+            width: 100%;
+        }
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .notification {
+            background-color: #2d2d2d;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification.success {
+            border-left: 4px solid #4CAF50;
+        }
+        .notification.error {
+            border-left: 4px solid #ff4444;
+        }
+        .notification.warning {
+            border-left: 4px solid #ffbb33;
+        }
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-container" id="notificationContainer"></div>
+    <div class="container">
+        <h1>Planet Destroyer</h1>
+        <button class="create-btn" onclick="toggleCreateForm()">Create New Planet</button>
+        <button class="reset-btn" onclick="resetPlanets()">Reset Planets</button>
+        <div class="create-form" id="createForm">
+            <input type="text" id="planetName" placeholder="Planet Name">
+            <input type="number" id="planetSize" placeholder="Planet Size (km)">
+            <input type="number" id="planetPopulation" placeholder="Population">
+            <button class="create-btn" onclick="createPlanet()">Create Planet</button>
+        </div>
+        <input type="text" class="search-box" placeholder="Search planets..." oninput="searchPlanets(this.value)">
+        <div class="planets-grid" id="planetsGrid"></div>
+    </div>
+
+    <script>
+        // API URLs - using relative paths since we'll serve from the same origin
+        const PLANET_SERVICE_URL = 'http://localhost:8000';
+        const DESTRUCTION_SERVICE_URL = 'http://localhost:8001';
+        const CREATION_SERVICE_URL = 'http://localhost:8002';
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            
+            const closeButton = document.createElement('button');
+            closeButton.className = 'notification-close';
+            closeButton.innerHTML = '&times;';
+            closeButton.onclick = () => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            };
+            
+            notification.appendChild(messageSpan);
+            notification.appendChild(closeButton);
+            container.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        function toggleCreateForm() {
+            const form = document.getElementById('createForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function createPlanet() {
+            const name = document.getElementById('planetName').value;
+            const size = parseInt(document.getElementById('planetSize').value);
+            const population = parseInt(document.getElementById('planetPopulation').value);
+
+            if (!name || !size || !population) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${CREATION_SERVICE_URL}/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name,
+                        size,
+                        population
+                    })
+                });
+                const result = await response.json();
+                showNotification(result.message);
+                toggleCreateForm();
+                fetchPlanets(); // Refresh the list
+            } catch (error) {
+                console.error('Error creating planet:', error);
+                showNotification('Failed to create planet', 'error');
+            }
+        }
+
+        async function fetchPlanets() {
+            try {
+                const response = await fetch(`${PLANET_SERVICE_URL}/planets`);
+                const planets = await response.json();
+                displayPlanets(planets);
+            } catch (error) {
+                console.error('Error fetching planets:', error);
+                showNotification('Failed to fetch planets', 'error');
+            }
+        }
+
+        async function searchPlanets(query) {
+            try {
+                const response = await fetch(`${PLANET_SERVICE_URL}/search?query=${encodeURIComponent(query)}`, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                displayPlanets(data.results);
+            } catch (error) {
+                console.error('Error searching planets:', error);
+                showNotification('Failed to search planets', 'error');
+            }
+        }
+
+        async function destroyPlanet(planetId) {
+            try {
+                const response = await fetch(`${DESTRUCTION_SERVICE_URL}/destroy/${planetId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                showNotification(result.message);
+                fetchPlanets(); // Refresh the list
+            } catch (error) {
+                console.error('Error destroying planet:', error);
+                showNotification('Failed to destroy planet', 'error');
+            }
+        }
+
+        async function resetPlanets() {
+            try {
+                const response = await fetch(`${PLANET_SERVICE_URL}/planets/reset`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                showNotification(result.message);
+                fetchPlanets(); // Refresh the list
+            } catch (error) {
+                console.error('Error resetting planets:', error);
+                showNotification('Failed to reset planets', 'error');
+            }
+        }
+
+        function displayPlanets(planets) {
+            const grid = document.getElementById('planetsGrid');
+            grid.innerHTML = '';
+            
+            planets.forEach(planet => {
+                const card = document.createElement('div');
+                card.className = 'planet-card';
+                card.innerHTML = `
+                    <div class="planet-name">${planet.name}</div>
+                    <div class="planet-details">Size: ${planet.size} km</div>
+                    <div class="planet-details">Population: ${planet.population}</div>
+                    <button class="destroy-btn" onclick="destroyPlanet(${planet.id})">
+                        DESTROY
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Initial load
+        fetchPlanets();
+    </script>
+</body>
+</html> 
