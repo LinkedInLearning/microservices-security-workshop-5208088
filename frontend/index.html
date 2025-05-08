@@ -179,10 +179,105 @@
             background-color: #2d2d2d;
             border-radius: 10px;
         }
+        .auth-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .auth-btn {
+            background-color: #4fc3f7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .auth-btn:hover {
+            background-color: #0288d1;
+        }
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .auth-form {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+        }
+        .auth-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .auth-form button {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .role-selector {
+            margin: 10px 0;
+            color: white;
+        }
+        .role-selector select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: none;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .auth-form p {
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <div class="notification-container" id="notificationContainer"></div>
+    <div class="auth-buttons">
+        <button class="auth-btn" onclick="showAuthModal('login')">Login</button>
+        <button class="auth-btn" onclick="showAuthModal('register')">Register</button>
+    </div>
+    <div id="authModal" class="auth-modal">
+        <div class="auth-form">
+            <h2 id="authTitle">Login</h2>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <div id="registerFields" style="display: none;">
+                <input type="email" id="email" placeholder="Email">
+                <div class="role-selector">
+                    <label>Register as:</label>
+                    <select id="role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+            </div>
+            <button class="auth-btn" id="authSubmit">Submit</button>
+            <button class="auth-btn" onclick="closeAuthModal()" style="background-color: #666;">Cancel</button>
+            <p id="authToggle" style="text-align: center; margin-top: 10px; cursor: pointer; color: #4fc3f7;">
+                Don't have an account? Register here
+            </p>
+        </div>
+    </div>
     <div class="container">
         <h1>Planet Destroyer</h1>
         <div class="death-toll" id="deathToll">Total Death Toll: 0 lives lost</div>
@@ -203,6 +298,7 @@
         const PLANET_SERVICE_URL = 'http://localhost:8000';
         const DESTRUCTION_SERVICE_URL = 'http://localhost:8001';
         const CREATION_SERVICE_URL = 'http://localhost:8002';
+        const AUTH_SERVICE_URL = 'http://localhost:8003';
 
         function showNotification(message, type = 'success') {
             const container = document.getElementById('notificationContainer');
@@ -236,6 +332,89 @@
         function toggleCreateForm() {
             const form = document.getElementById('createForm');
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        let currentAuthMode = 'login';
+
+        function showAuthModal(mode) {
+            currentAuthMode = mode;
+            document.getElementById('authTitle').textContent = mode === 'login' ? 'Login' : 'Register';
+            document.getElementById('authModal').style.display = 'block';
+            document.getElementById('registerFields').style.display = mode === 'register' ? 'block' : 'none';
+            document.getElementById('authSubmit').onclick = () => handleAuth(mode);
+            document.getElementById('authToggle').textContent = mode === 'login' ? 
+                "Don't have an account? Register here" : 
+                "Already have an account? Login here";
+            document.getElementById('authToggle').onclick = () => showAuthModal(mode === 'login' ? 'register' : 'login');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('role').value = 'user';
+        }
+
+        async function handleAuth(mode) {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                let response;
+                if (mode === 'login') {
+                    response = await fetch(`${AUTH_SERVICE_URL}/token`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            'username': username,
+                            'password': password,
+                        }),
+                    });
+                } else {
+                    const email = document.getElementById('email').value;
+                    const role = document.getElementById('role').value;
+                    
+                    if (!email) {
+                        showNotification('Please fill in all fields', 'error');
+                        return;
+                    }
+
+                    response = await fetch(`${AUTH_SERVICE_URL}/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            username,
+                            password,
+                            email,
+                            role
+                        }),
+                    });
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    showNotification(`${mode === 'login' ? 'Logged in' : 'Registered'} successfully!`);
+                    closeAuthModal();
+                    // Refresh the page to update UI state
+                    location.reload();
+                } else {
+                    showNotification(data.detail || 'Authentication failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Authentication service error', 'error');
+            }
         }
 
         async function createPlanet() {
@@ -298,11 +477,18 @@
         }
 
         async function destroyPlanet(planetId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showNotification('Please login to destroy planets', 'error');
+                return;
+            }
+
             try {
                 const response = await fetch(`${DESTRUCTION_SERVICE_URL}/destroy/${planetId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 const data = await response.json();
@@ -320,13 +506,26 @@
         }
 
         async function resetPlanets() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showNotification('Please login to reset planets', 'error');
+                return;
+            }
+
             try {
                 const response = await fetch(`${PLANET_SERVICE_URL}/planets/reset`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
                 const result = await response.json();
-                showNotification(result.message);
-                fetchPlanets(); // Refresh the list
+                if (response.ok) {
+                    showNotification(result.message);
+                    fetchPlanets();
+                } else {
+                    showNotification('Error: ' + result.detail, 'error');
+                }
             } catch (error) {
                 console.error('Error resetting planets:', error);
                 showNotification('Failed to reset planets', 'error');
@@ -337,6 +536,9 @@
             const grid = document.getElementById('planetsGrid');
             grid.innerHTML = '';
             
+            const token = localStorage.getItem('token');
+            const isLoggedIn = !!token;
+            
             planets.forEach(planet => {
                 const card = document.createElement('div');
                 card.className = 'planet-card';
@@ -344,16 +546,82 @@
                     <div class="planet-name">${planet.name}</div>
                     <div class="planet-details">Size: ${planet.size} km</div>
                     <div class="planet-details">Population: ${planet.population}</div>
-                    <button class="destroy-btn" onclick="destroyPlanet(${planet.id})">
-                        DESTROY
-                    </button>
+                    ${isLoggedIn ? `
+                        <button class="destroy-btn" onclick="destroyPlanet(${planet.id})">
+                            DESTROY
+                        </button>
+                    ` : `
+                        <button class="destroy-btn" disabled onclick="showNotification('Please login to destroy planets', 'error')">
+                            DESTROY
+                        </button>
+                    `}
                 `;
                 grid.appendChild(card);
             });
+
+            // Show/hide reset button based on admin status
+            const resetBtn = document.querySelector('.reset-btn');
+            if (resetBtn) {
+                resetBtn.style.display = isLoggedIn ? 'inline-block' : 'none';
+            }
+        }
+
+        // Add function to check if user is admin
+        async function checkAdminStatus() {
+            const token = localStorage.getItem('token');
+            if (!token) return false;
+
+            try {
+                const response = await fetch(`${AUTH_SERVICE_URL}/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const user = await response.json();
+                    return user.role === 'admin';
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+            return false;
+        }
+
+        // Update UI based on auth status
+        async function updateAuthUI() {
+            const token = localStorage.getItem('token');
+            const authButtons = document.querySelector('.auth-buttons');
+            const resetBtn = document.querySelector('.reset-btn');
+
+            if (token) {
+                authButtons.innerHTML = `
+                    <button class="auth-btn" onclick="logout()">Logout</button>
+                `;
+                const isAdmin = await checkAdminStatus();
+                if (resetBtn) {
+                    resetBtn.style.display = isAdmin ? 'inline-block' : 'none';
+                }
+            } else {
+                authButtons.innerHTML = `
+                    <button class="auth-btn" onclick="showAuthModal('login')">Login</button>
+                    <button class="auth-btn" onclick="showAuthModal('register')">Register</button>
+                `;
+                if (resetBtn) {
+                    resetBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            showNotification('Logged out successfully');
+            updateAuthUI();
+            fetchPlanets();
         }
 
         // Initial load
         fetchPlanets();
+        updateAuthUI();
     </script>
 </body>
 </html> 

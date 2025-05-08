@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 import sqlite3
 import json
+from shared.auth import get_current_user, require_admin
 
 app = FastAPI()
 
@@ -72,9 +73,8 @@ async def get_planet(planet_id: int):
 async def get_death_toll():
     return {"death_toll": death_toll}
 
-# Intentionally vulnerable endpoint - no authentication or validation
 @app.delete("/planets/{planet_id}")
-async def delete_planet(planet_id: int):
+async def delete_planet(planet_id: int, user = Depends(get_current_user)):
     global planets, death_toll
     for i, planet in enumerate(planets):
         if planet["id"] == planet_id:
@@ -138,7 +138,7 @@ async def create_planet(planet: Planet):
     return {"message": "Planet created successfully", "planet": planet}
 
 @app.post("/planets/reset")
-async def reset_planets():
+async def reset_planets(user = Depends(require_admin)):
     global planets
     planets = INITIAL_PLANETS.copy()
     return {"message": "Planets reset to initial state"}

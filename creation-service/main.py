@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import requests
-import json
+import httpx
+from typing import List
+from shared.auth import get_current_user
 
 app = FastAPI()
 
@@ -23,16 +24,25 @@ class PlanetCreate(BaseModel):
     size: int
     population: int
 
+async def get_http_client():
+    async with httpx.AsyncClient() as client:
+        yield client
+
 @app.post("/create")
-async def create_planet(planet: PlanetCreate):
+async def create_planet(
+    planet: PlanetCreate,
+    request: Request,
+    client: httpx.AsyncClient = Depends(get_http_client),
+    user = Depends(get_current_user)
+):
     try:
-        # No input validation or sanitization
-        # No authentication or authorization
-        # No rate limiting
-        # No size/population validation
-        
+        # Forward auth header
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            client.headers['Authorization'] = auth_header
+
         # Get current planets to generate new ID
-        response = requests.get(f"{PLANET_SERVICE_URL}/planets")
+        response = await client.get(f"{PLANET_SERVICE_URL}/planets")
         planets = response.json()
         new_id = max(p["id"] for p in planets) + 1 if planets else 1
         
@@ -44,8 +54,11 @@ async def create_planet(planet: PlanetCreate):
             "population": planet.population
         }
         
-        # Add to planets list (in a real app, this would be a database operation)
-        response = requests.post(f"{PLANET_SERVICE_URL}/planets", json=new_planet)
+        # Add to planets list
+        response = await client.post(
+            f"{PLANET_SERVICE_URL}/planets",
+            json=new_planet
+        )
         
         if response.status_code == 200:
             return {"message": f"Planet {planet.name} created successfully!", "planet": new_planet}

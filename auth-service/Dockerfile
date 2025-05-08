@@ -36,7 +36,7 @@ RUN mkdir -p /app/shared \
 USER appuser
 
 # Expose port
-EXPOSE 8001
+EXPOSE 8003
 
 # Run the application
 CMD ["python", "main.py"] 
