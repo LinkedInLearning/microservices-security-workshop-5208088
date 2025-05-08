@@ -179,30 +179,207 @@
             background-color: #2d2d2d;
             border-radius: 10px;
         }
+        .login-container {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .login-form {
+            display: inline-block;
+            text-align: left;
+        }
+        .login-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .login-btn, .register-btn {
+            background-color: #4fc3f7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        .login-btn:hover, .register-btn:hover {
+            background-color: #0288d1;
+        }
+        .form-toggle {
+            color: #4fc3f7;
+            cursor: pointer;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+        .password-requirements {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+            text-align: left;
+        }
+        .admin-controls {
+            display: none;
+        }
+        .user-info {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .logout-btn {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="notification-container" id="notificationContainer"></div>
     <div class="container">
         <h1>Planet Destroyer</h1>
-        <div class="death-toll" id="deathToll">Total Death Toll: 0 lives lost</div>
-        <button class="create-btn" onclick="toggleCreateForm()">Create New Planet</button>
-        <button class="reset-btn" onclick="resetPlanets()">Reset Planets</button>
+        
+        <div class="login-container" id="loginContainer">
+            <div class="login-form">
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <div>
+                    <button class="login-btn" onclick="login()">Login</button>
+                    <button class="register-btn" onclick="register()">Register</button>
+                </div>
+                <div class="password-requirements">
+                    Password must:
+                    <ul>
+                        <li>Be at least 12 characters long</li>
+                        <li>Contain at least one uppercase letter</li>
+                        <li>Contain at least one lowercase letter</li>
+                        <li>Contain at least one number</li>
+                        <li>Contain at least one special character</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="user-info" id="userInfo" style="display: none;">
+            Logged in as: <span id="loggedInUser"></span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="admin-controls" id="adminControls">
+            <button class="create-btn" onclick="toggleCreateForm()">Create New Planet</button>
+            <button class="reset-btn" onclick="resetPlanets()">Reset Planets</button>
+        </div>
+
         <div class="create-form" id="createForm">
             <input type="text" id="planetName" placeholder="Planet Name">
             <input type="number" id="planetSize" placeholder="Planet Size (km)">
             <input type="number" id="planetPopulation" placeholder="Population">
             <button class="create-btn" onclick="createPlanet()">Create Planet</button>
         </div>
+
+        <div class="death-toll" id="deathToll">Total Death Toll: 0 lives lost</div>
         <input type="text" class="search-box" placeholder="Search planets..." oninput="searchPlanets(this.value)">
         <div class="planets-grid" id="planetsGrid"></div>
     </div>
 
     <script>
-        // API URLs - using relative paths since we'll serve from the same origin
+        // API URLs
         const PLANET_SERVICE_URL = 'http://localhost:8000';
         const DESTRUCTION_SERVICE_URL = 'http://localhost:8001';
         const CREATION_SERVICE_URL = 'http://localhost:8002';
+        const AUTH_SERVICE_URL = 'http://localhost:8003';
+
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = localStorage.getItem('currentUser');
+
+        // Check if user is logged in on page load
+        window.onload = function() {
+            if (authToken) {
+                verifyToken();
+            }
+            fetchPlanets();
+        };
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${AUTH_SERVICE_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = username;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', username);
+                    showNotification('Login successful!', 'success');
+                    updateUIForLoggedInUser();
+                } else {
+                    showNotification(data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Login failed', 'error');
+            }
+        }
+
+        function logout() {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            updateUIForLoggedOutUser();
+            showNotification('Logged out successfully', 'success');
+        }
+
+        async function verifyToken() {
+            try {
+                const response = await fetch(`${AUTH_SERVICE_URL}/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    updateUIForLoggedInUser();
+                } else {
+                    logout();
+                }
+            } catch (error) {
+                logout();
+            }
+        }
+
+        function updateUIForLoggedInUser() {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('adminControls').style.display = 'block';
+            document.getElementById('loggedInUser').textContent = currentUser;
+        }
+
+        function updateUIForLoggedOutUser() {
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('adminControls').style.display = 'none';
+            document.getElementById('createForm').style.display = 'none';
+        }
 
         function showNotification(message, type = 'success') {
             const container = document.getElementById('notificationContainer');
@@ -272,7 +449,19 @@
 
         async function fetchPlanets() {
             try {
-                const response = await fetch(`${PLANET_SERVICE_URL}/planets`);
+                const response = await fetch(`${PLANET_SERVICE_URL}/planets`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const planets = await response.json();
                 displayPlanets(planets);
             } catch (error) {
@@ -320,16 +509,51 @@
         }
 
         async function resetPlanets() {
+            if (!authToken) {
+                showNotification('You must be logged in as an admin to reset planets', 'error');
+                return;
+            }
+
             try {
-                const response = await fetch(`${PLANET_SERVICE_URL}/planets/reset`, {
-                    method: 'POST'
+                // First verify the token
+                const verifyResponse = await fetch(`${AUTH_SERVICE_URL}/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
                 });
-                const result = await response.json();
-                showNotification(result.message);
-                fetchPlanets(); // Refresh the list
+
+                if (!verifyResponse.ok) {
+                    showNotification('Your session has expired. Please log in again.', 'error');
+                    logout();
+                    return;
+                }
+
+                // If token is valid, proceed with reset
+                const response = await fetch(`${PLANET_SERVICE_URL}/planets/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+
+                if (response.ok) {
+                    showNotification('All planets have been reset', 'success');
+                    fetchPlanets();
+                } else {
+                    const errorData = await response.json();
+                    showNotification(errorData.error || 'Failed to reset planets', 'error');
+                }
             } catch (error) {
-                console.error('Error resetting planets:', error);
                 showNotification('Failed to reset planets', 'error');
+                if (error.message.includes('expired') || error.message.includes('invalid')) {
+                    logout();
+                }
             }
         }
 
@@ -352,8 +576,35 @@
             });
         }
 
-        // Initial load
-        fetchPlanets();
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${AUTH_SERVICE_URL}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = username;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', username);
+                    showNotification('Registration successful!', 'success');
+                    updateUIForLoggedInUser();
+                } else {
+                    showNotification(data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Registration failed', 'error');
+            }
+        }
     </script>
 </body>
 </html> 

@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3'
 
 services:
   planet-service:
@@ -7,6 +7,10 @@ services:
       - "8000:8000"
     networks:
       - insecure-microservices
+    environment:
+      - JWT_SIGNING_KEY=your-signing-key-here
+      - JWT_ENCRYPTION_KEY=your-encryption-key-here
+      - ADMIN_API_KEY=your-admin-key-here
 
   destruction-service:
     build: ./destruction-service
@@ -14,6 +18,10 @@ services:
       - "8001:8001"
     networks:
       - insecure-microservices
+    environment:
+      - JWT_SIGNING_KEY=your-signing-key-here
+      - JWT_ENCRYPTION_KEY=your-encryption-key-here
+      - ADMIN_API_KEY=your-admin-key-here
 
   creation-service:
     build: ./creation-service
@@ -21,13 +29,33 @@ services:
       - "8002:8002"
     networks:
       - insecure-microservices
+    environment:
+      - JWT_SIGNING_KEY=your-signing-key-here
+      - JWT_ENCRYPTION_KEY=your-encryption-key-here
+      - ADMIN_API_KEY=your-admin-key-here
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8003:8003"
+    networks:
+      - insecure-microservices
+    environment:
+      - JWT_SIGNING_KEY=your-signing-key-here
+      - JWT_ENCRYPTION_KEY=your-encryption-key-here
+      - ADMIN_API_KEY=your-admin-key-here
 
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "80:80"
     networks:
       - insecure-microservices
+    depends_on:
+      - planet-service
+      - destruction-service
+      - creation-service
+      - auth-service
 
 networks:
   insecure-microservices:
