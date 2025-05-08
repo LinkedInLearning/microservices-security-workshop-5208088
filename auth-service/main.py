@@ -6,15 +6,19 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt as PyJWT
+import os
 from shared.auth import (
     create_access_token, create_refresh_token, verify_token,
-    SECRET_KEY, ALGORITHM, USERS, USER_PASSWORDS,
+    ALGORITHM, USERS, USER_PASSWORDS,
     verify_password, get_current_user, User, UserCreate, get_password_hash
 )
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import os
+
+# Get JWT secret key from environment variable
+# In production, this would be retrieved from a secrets manager
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-super-secret-key-that-should-be-in-secrets-manager")
 
 app = FastAPI(
     title="Auth Service",

@@ -1,12 +1,27 @@
 version: '3'
 
 services:
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./shared:/app/shared
+    environment:
+      # In production, this would be stored in a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Kubernetes Secrets
+      - JWT_SECRET_KEY=your-super-secret-key-that-should-be-in-secrets-manager
+    networks:
+      - insecure-microservices
+
   planet-service:
     build: ./planet-service
     ports:
       - "8000:8000"
     volumes:
       - ./shared:/app/shared
+    environment:
+      # In production, this would be stored in a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Kubernetes Secrets
+      - JWT_SECRET_KEY=your-super-secret-key-that-should-be-in-secrets-manager
     networks:
       - insecure-microservices
 
@@ -18,6 +33,8 @@ services:
       - ./shared:/app/shared
     environment:
       - PLANET_SERVICE_URL=http://planet-service:8000
+      # In production, this would be stored in a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Kubernetes Secrets
+      - JWT_SECRET_KEY=your-super-secret-key-that-should-be-in-secrets-manager
     networks:
       - insecure-microservices
 
@@ -29,6 +46,8 @@ services:
       - ./shared:/app/shared
     environment:
       - PLANET_SERVICE_URL=http://planet-service:8000
+      # In production, this would be stored in a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Kubernetes Secrets
+      - JWT_SECRET_KEY=your-super-secret-key-that-should-be-in-secrets-manager
     networks:
       - insecure-microservices
 
@@ -38,6 +57,9 @@ services:
       - "8003:8003"
     volumes:
       - ./shared:/app/shared
+    environment:
+      # In production, this would be stored in a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Kubernetes Secrets
+      - JWT_SECRET_KEY=your-super-secret-key-that-should-be-in-secrets-manager
     networks:
       - insecure-microservices
 
@@ -46,10 +68,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_PLANET_SERVICE_URL=http://localhost:8000
-      - REACT_APP_CREATION_SERVICE_URL=http://localhost:8002
-      - REACT_APP_DESTRUCTION_SERVICE_URL=http://localhost:8001
-      - REACT_APP_AUTH_SERVICE_URL=http://localhost:8003
+      - REACT_APP_API_GATEWAY_URL=http://localhost:8004
     networks:
       - insecure-microservices
 

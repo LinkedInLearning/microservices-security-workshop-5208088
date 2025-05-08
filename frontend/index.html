@@ -294,11 +294,10 @@
     </div>
 
     <script>
-        // API URLs - using relative paths since we'll serve from the same origin
-        const PLANET_SERVICE_URL = 'http://localhost:8000';
-        const DESTRUCTION_SERVICE_URL = 'http://localhost:8001';
-        const CREATION_SERVICE_URL = 'http://localhost:8002';
-        const AUTH_SERVICE_URL = 'http://localhost:8003';
+        const API_GATEWAY_URL = window.ENV_API_GATEWAY_URL || 'http://localhost:8004';
+        let accessToken = localStorage.getItem('accessToken');
+        let refreshToken = localStorage.getItem('refreshToken');
+        let currentUser = null;
 
         function showNotification(message, type = 'success') {
             const container = document.getElementById('notificationContainer');
@@ -368,15 +367,12 @@
             try {
                 let response;
                 if (mode === 'login') {
-                    response = await fetch(`${AUTH_SERVICE_URL}/token`, {
+                    response = await fetch(`${API_GATEWAY_URL}/token`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: new URLSearchParams({
-                            'username': username,
-                            'password': password,
-                        }),
+                        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
                     });
                 } else {
                     const email = document.getElementById('email').value;
@@ -387,28 +383,25 @@
                         return;
                     }
 
-                    response = await fetch(`${AUTH_SERVICE_URL}/register`, {
+                    response = await fetch(`${API_GATEWAY_URL}/register`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            username,
-                            password,
-                            email,
-                            role
-                        }),
+                        body: JSON.stringify({ username, password, email, role }),
                     });
                 }
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    localStorage.setItem('token', data.access_token);
+                    accessToken = data.access_token;
+                    refreshToken = data.refresh_token;
+                    localStorage.setItem('accessToken', accessToken);
+                    localStorage.setItem('refreshToken', refreshToken);
+                    await checkLoginStatus();
                     showNotification(`${mode === 'login' ? 'Logged in' : 'Registered'} successfully!`);
                     closeAuthModal();
-                    // Refresh the page to update UI state
-                    location.reload();
                 } else {
                     showNotification(data.detail || 'Authentication failed', 'error');
                 }
@@ -428,16 +421,13 @@
             }
 
             try {
-                const response = await fetch(`${CREATION_SERVICE_URL}/create`, {
+                const response = await fetch(`${API_GATEWAY_URL}/create`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
                     },
-                    body: JSON.stringify({
-                        name,
-                        size,
-                        population
-                    })
+                    body: JSON.stringify({ name, size, population }),
                 });
                 const result = await response.json();
                 showNotification(result.message);
@@ -451,7 +441,7 @@
 
         async function fetchPlanets() {
             try {
-                const response = await fetch(`${PLANET_SERVICE_URL}/planets`);
+                const response = await fetch(`${API_GATEWAY_URL}/planets`);
                 const planets = await response.json();
                 displayPlanets(planets);
             } catch (error) {
@@ -462,12 +452,7 @@
 
         async function searchPlanets(query) {
             try {
-                const response = await fetch(`${PLANET_SERVICE_URL}/search?query=${encodeURIComponent(query)}`, {
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
+                const response = await fetch(`${API_GATEWAY_URL}/search?query=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 displayPlanets(data.results);
             } catch (error) {
@@ -477,27 +462,29 @@
         }
 
         async function destroyPlanet(planetId) {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            if (!accessToken) {
                 showNotification('Please login to destroy planets', 'error');
                 return;
             }
 
             try {
-                const response = await fetch(`${DESTRUCTION_SERVICE_URL}/destroy/${planetId}`, {
+                const response = await fetch(`${API_GATEWAY_URL}/destroy/${planetId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${accessToken}`,
                     }
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    document.getElementById('deathToll').textContent = `Total Death Toll: ${data.total_deaths}`;
                     showNotification(`${data.message} ${data.total_deaths}`, 'warning');
-                    fetchPlanets();
+                    await fetchPlanets();
+                    // Update death toll display
+                    const deathToll = document.getElementById('deathToll');
+                    if (deathToll && data.death_toll) {
+                        deathToll.textContent = `Total Death Toll: ${data.death_toll.toLocaleString()} lives lost across the universe`;
+                    }
                 } else {
-                    showNotification('Error: ' + data.detail, 'error');
+                    showNotification(data.detail || 'Failed to destroy planet', 'error');
                 }
             } catch (error) {
                 console.error('Error destroying planet:', error);
@@ -506,25 +493,29 @@
         }
 
         async function resetPlanets() {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            if (!accessToken) {
                 showNotification('Please login to reset planets', 'error');
                 return;
             }
 
             try {
-                const response = await fetch(`${PLANET_SERVICE_URL}/planets/reset`, {
+                const response = await fetch(`${API_GATEWAY_URL}/reset-planets`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${accessToken}`,
                     }
                 });
-                const result = await response.json();
+                const data = await response.json();
                 if (response.ok) {
-                    showNotification(result.message);
-                    fetchPlanets();
+                    showNotification(data.message, 'success');
+                    await fetchPlanets();
+                    // Reset death toll display
+                    const deathToll = document.getElementById('deathToll');
+                    if (deathToll) {
+                        deathToll.textContent = 'Total Death Toll: 0 lives lost';
+                    }
                 } else {
-                    showNotification('Error: ' + result.detail, 'error');
+                    showNotification('Error: ' + data.detail, 'error');
                 }
             } catch (error) {
                 console.error('Error resetting planets:', error);
@@ -536,17 +527,14 @@
             const grid = document.getElementById('planetsGrid');
             grid.innerHTML = '';
             
-            const token = localStorage.getItem('token');
-            const isLoggedIn = !!token;
-            
             planets.forEach(planet => {
                 const card = document.createElement('div');
                 card.className = 'planet-card';
                 card.innerHTML = `
                     <div class="planet-name">${planet.name}</div>
-                    <div class="planet-details">Size: ${planet.size} km</div>
-                    <div class="planet-details">Population: ${planet.population}</div>
-                    ${isLoggedIn ? `
+                    <div class="planet-details">Size: ${planet.size.toLocaleString()} km</div>
+                    <div class="planet-details">Population: ${planet.population.toLocaleString()}</div>
+                    ${currentUser ? `
                         <button class="destroy-btn" onclick="destroyPlanet(${planet.id})">
                             DESTROY
                         </button>
@@ -558,12 +546,6 @@
                 `;
                 grid.appendChild(card);
             });
-
-            // Show/hide reset button based on admin status
-            const resetBtn = document.querySelector('.reset-btn');
-            if (resetBtn) {
-                resetBtn.style.display = isLoggedIn ? 'inline-block' : 'none';
-            }
         }
 
         // Add function to check if user is admin
@@ -572,9 +554,9 @@
             if (!token) return false;
 
             try {
-                const response = await fetch(`${AUTH_SERVICE_URL}/me`, {
+                const response = await fetch(`${API_GATEWAY_URL}/users/me`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${accessToken}`
                     }
                 });
                 if (response.ok) {
@@ -589,17 +571,20 @@
 
         // Update UI based on auth status
         async function updateAuthUI() {
-            const token = localStorage.getItem('token');
             const authButtons = document.querySelector('.auth-buttons');
             const resetBtn = document.querySelector('.reset-btn');
+            const createBtn = document.querySelector('.create-btn');
 
-            if (token) {
+            if (currentUser) {
                 authButtons.innerHTML = `
+                    <span style="color: #4fc3f7; margin-right: 10px;">Welcome, ${currentUser.username}</span>
                     <button class="auth-btn" onclick="logout()">Logout</button>
                 `;
-                const isAdmin = await checkAdminStatus();
                 if (resetBtn) {
-                    resetBtn.style.display = isAdmin ? 'inline-block' : 'none';
+                    resetBtn.style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
+                }
+                if (createBtn) {
+                    createBtn.style.display = 'inline-block';
                 }
             } else {
                 authButtons.innerHTML = `
@@ -609,19 +594,96 @@
                 if (resetBtn) {
                     resetBtn.style.display = 'none';
                 }
+                if (createBtn) {
+                    createBtn.style.display = 'none';
+                }
             }
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            showNotification('Logged out successfully');
+        async function logout() {
+            try {
+                await fetch(`${API_GATEWAY_URL}/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                clearAuthState();
+                showNotification('Logged out successfully');
+            }
+        }
+
+        // Add function to check login status on page load
+        async function checkLoginStatus() {
+            if (accessToken) {
+                try {
+                    const response = await fetch(`${API_GATEWAY_URL}/users/me`, {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    });
+                    if (response.ok) {
+                        currentUser = await response.json();
+                        updateAuthUI();
+                    } else {
+                        // Token might be expired, try to refresh
+                        await refreshAccessToken();
+                    }
+                } catch (error) {
+                    console.error('Error checking login status:', error);
+                    clearAuthState();
+                }
+            }
+        }
+
+        // Add function to refresh access token
+        async function refreshAccessToken() {
+            if (!refreshToken) {
+                clearAuthState();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_GATEWAY_URL}/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    accessToken = data.access_token;
+                    refreshToken = data.refresh_token;
+                    localStorage.setItem('accessToken', accessToken);
+                    localStorage.setItem('refreshToken', refreshToken);
+                    await checkLoginStatus();
+                } else {
+                    clearAuthState();
+                }
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                clearAuthState();
+            }
+        }
+
+        // Add function to clear auth state
+        function clearAuthState() {
+            accessToken = null;
+            refreshToken = null;
+            currentUser = null;
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
             updateAuthUI();
-            fetchPlanets();
         }
 
         // Initial load
         fetchPlanets();
-        updateAuthUI();
+        checkLoginStatus();
     </script>
 </body>
 </html> 
