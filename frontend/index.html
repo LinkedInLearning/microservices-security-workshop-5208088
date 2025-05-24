@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planet Destroyer</title>
+    <title>Planet Saver</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,7 +45,7 @@
             margin: 10px 0;
         }
         .destroy-btn {
-            background-color: #ff4444;
+            background-color: #4CAF50;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -55,7 +55,7 @@
             transition: background-color 0.3s;
         }
         .destroy-btn:hover {
-            background-color: #cc0000;
+            background-color: #45a049;
         }
         .create-btn {
             background-color: #4CAF50;
@@ -173,7 +173,7 @@
         .death-toll {
             text-align: center;
             font-size: 24px;
-            color: #ff4444;
+            color: #4CAF50;
             margin: 20px 0;
             padding: 10px;
             background-color: #2d2d2d;
@@ -279,8 +279,8 @@
         </div>
     </div>
     <div class="container">
-        <h1>Planet Destroyer</h1>
-        <div class="death-toll" id="deathToll">Total Death Toll: 0 lives lost</div>
+        <h1>Planet Saver</h1>
+        <div class="death-toll" id="deathToll">Total Saved: 0 lives saved</div>
         <button class="create-btn" onclick="toggleCreateForm()">Create New Planet</button>
         <button class="reset-btn" onclick="resetPlanets()">Reset Planets</button>
         <div class="create-form" id="createForm">
@@ -463,7 +463,7 @@
 
         async function destroyPlanet(planetId) {
             if (!accessToken) {
-                showNotification('Please login to destroy planets', 'error');
+                showNotification('Please login to save planets', 'error');
                 return;
             }
 
@@ -476,19 +476,19 @@
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    showNotification(`${data.message} ${data.total_deaths}`, 'warning');
+                    showNotification(`${data.message} ${data.total_deaths}`, 'success');
                     await fetchPlanets();
                     // Update death toll display
                     const deathToll = document.getElementById('deathToll');
                     if (deathToll && data.death_toll) {
-                        deathToll.textContent = `Total Death Toll: ${data.death_toll.toLocaleString()} lives lost across the universe`;
+                        deathToll.textContent = `Total Saved: ${data.death_toll.toLocaleString()} lives saved by the Zorg`;
                     }
                 } else {
-                    showNotification(data.detail || 'Failed to destroy planet', 'error');
+                    showNotification(data.detail || 'Failed to save planet', 'error');
                 }
             } catch (error) {
-                console.error('Error destroying planet:', error);
-                showNotification('Failed to destroy planet', 'error');
+                console.error('Error saving planet:', error);
+                showNotification('Failed to save planet', 'error');
             }
         }
 
@@ -512,7 +512,7 @@
                     // Reset death toll display
                     const deathToll = document.getElementById('deathToll');
                     if (deathToll) {
-                        deathToll.textContent = 'Total Death Toll: 0 lives lost';
+                        deathToll.textContent = 'Total Saved: 0 lives saved';
                     }
                 } else {
                     showNotification('Error: ' + data.detail, 'error');
@@ -536,11 +536,11 @@
                     <div class="planet-details">Population: ${planet.population.toLocaleString()}</div>
                     ${currentUser ? `
                         <button class="destroy-btn" onclick="destroyPlanet(${planet.id})">
-                            DESTROY
+                            SAVE
                         </button>
                     ` : `
-                        <button class="destroy-btn" disabled onclick="showNotification('Please login to destroy planets', 'error')">
-                            DESTROY
+                        <button class="destroy-btn" disabled onclick="showNotification('Please login to save planets', 'error')">
+                            SAVE
                         </button>
                     `}
                 `;
