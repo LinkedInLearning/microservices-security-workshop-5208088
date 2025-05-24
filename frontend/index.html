@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planet Destroyer</title>
+    <title>Planet Saver</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,7 +45,7 @@
             margin: 10px 0;
         }
         .destroy-btn {
-            background-color: #ff4444;
+            background-color: #4CAF50;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -55,7 +55,7 @@
             transition: background-color 0.3s;
         }
         .destroy-btn:hover {
-            background-color: #cc0000;
+            background-color: #45a049;
         }
         .create-btn {
             background-color: #4CAF50;
@@ -173,7 +173,7 @@
         .death-toll {
             text-align: center;
             font-size: 24px;
-            color: #ff4444;
+            color: #4CAF50;
             margin: 20px 0;
             padding: 10px;
             background-color: #2d2d2d;
@@ -247,7 +247,7 @@
 <body>
     <div class="notification-container" id="notificationContainer"></div>
     <div class="container">
-        <h1>Planet Destroyer</h1>
+        <h1>Planet Saver</h1>
         
         <div class="login-container" id="loginContainer">
             <div class="login-form">
@@ -287,7 +287,7 @@
             <button class="create-btn" onclick="createPlanet()">Create Planet</button>
         </div>
 
-        <div class="death-toll" id="deathToll">Total Death Toll: 0 lives lost</div>
+        <div class="death-toll" id="deathToll">Total Saved: 0 lives saved</div>
         <input type="text" class="search-box" placeholder="Search planets..." oninput="searchPlanets(this.value)">
         <div class="planets-grid" id="planetsGrid"></div>
     </div>
@@ -496,8 +496,8 @@
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    document.getElementById('deathToll').textContent = `Total Death Toll: ${data.total_deaths}`;
-                    showNotification(`${data.message} ${data.total_deaths}`, 'warning');
+                    document.getElementById('deathToll').textContent = `Total Saved: ${data.total_deaths}`;
+                    showNotification(`${data.message} ${data.total_deaths}`, 'success');
                     fetchPlanets();
                 } else {
                     showNotification('Error: ' + data.detail, 'error');
@@ -569,7 +569,7 @@
                     <div class="planet-details">Size: ${planet.size} km</div>
                     <div class="planet-details">Population: ${planet.population}</div>
                     <button class="destroy-btn" onclick="destroyPlanet(${planet.id})">
-                        DESTROY
+                        SAVE
                     </button>
                 `;
                 grid.appendChild(card);

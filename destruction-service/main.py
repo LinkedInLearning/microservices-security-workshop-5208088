@@ -27,12 +27,12 @@ async def destroy_planet(planet_id: int):
         if response.status_code == 200:
             data = response.json()
             return {
-                "message": f"Planet {planet_id} has been successfully destroyed!",
+                "message": f"Planet {planet_id} has been successfully saved by the Zorg!",
                 "death_toll": data.get("death_toll", 0),
-                "total_deaths": f"{data.get('death_toll', 0):,} lives lost across the universe"
+                "total_deaths": f"{data.get('death_toll', 0):,} lives saved by the Zorg"
             }
         else:
-            raise HTTPException(status_code=response.status_code, detail="Failed to destroy planet")
+            raise HTTPException(status_code=response.status_code, detail="Failed to save planet")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
