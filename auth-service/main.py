@@ -86,12 +86,17 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         )
     
     # Create tokens
-    access_token = create_access_token(data={"sub": form_data.username})
-    refresh_token = create_refresh_token(data={"sub": form_data.username})
-    
+    access_token = create_access_token(data={
+    "sub": form_data.username,
+    "role": user.role
+    })
+    new_refresh_token = create_refresh_token(data={
+        "sub": form_data.username
+    })
+
     return {
         "access_token": access_token,
-        "refresh_token": refresh_token,
+        "refresh_token": new_refresh_token,
         "token_type": "bearer"
     }
 
@@ -116,8 +121,13 @@ async def refresh_token(request: Request, refresh_token: str):
             )
         
         # Create new tokens
-        access_token = create_access_token(data={"sub": username})
-        new_refresh_token = create_refresh_token(data={"sub": username})
+        access_token = create_access_token(data={
+        "sub": username,
+        "role": USERS[username].role
+        })
+        new_refresh_token = create_refresh_token(data={
+            "sub": username
+        })
         
         return {
             "access_token": access_token,
@@ -166,8 +176,13 @@ async def register(request: Request, user_data: UserCreate):
     USER_PASSWORDS[user_data.username] = get_password_hash(user_data.password)
     
     # Create tokens for immediate login
-    access_token = create_access_token(data={"sub": user_data.username})
-    refresh_token = create_refresh_token(data={"sub": user_data.username})
+    access_token = create_access_token(data={
+    "sub": form_data.username,
+    "role": user.role
+    })
+    refresh_token = create_refresh_token(data={
+        "sub": form_data.username
+    })
     
     return {
         "access_token": access_token,

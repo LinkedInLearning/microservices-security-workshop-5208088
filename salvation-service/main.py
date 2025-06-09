@@ -32,7 +32,7 @@ async def save_planet(
     request: Request,
     planet_id: int,
     client: httpx.AsyncClient = Depends(get_http_client),
-    user = Depends(get_current_user)
+    user = Depends(require_admin)
 ):
     try:
         # Forward auth header
