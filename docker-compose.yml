@@ -12,8 +12,8 @@ services:
       - JWT_ENCRYPTION_KEY=your-encryption-key-here
       - ADMIN_API_KEY=your-admin-key-here
 
-  destruction-service:
-    build: ./destruction-service
+  salvation-service:
+    build: ./salvation-service
     ports:
       - "8001:8001"
     networks:
@@ -53,7 +53,7 @@ services:
       - insecure-microservices
     depends_on:
       - planet-service
-      - destruction-service
+      - salvation-service
       - creation-service
       - auth-service
 

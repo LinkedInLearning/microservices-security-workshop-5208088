@@ -295,7 +295,7 @@
     <script>
         // API URLs
         const PLANET_SERVICE_URL = 'http://localhost:8000';
-        const DESTRUCTION_SERVICE_URL = 'http://localhost:8001';
+        const SALVATION_SERVICE_URL = 'http://localhost:8001';
         const CREATION_SERVICE_URL = 'http://localhost:8002';
         const AUTH_SERVICE_URL = 'http://localhost:8003';
 
@@ -488,7 +488,7 @@
 
         async function destroyPlanet(planetId) {
             try {
-                const response = await fetch(`${DESTRUCTION_SERVICE_URL}/destroy/${planetId}`, {
+                const response = await fetch(`${SALVATION_SERVICE_URL}/save/${planetId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
