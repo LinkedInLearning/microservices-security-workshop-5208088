@@ -8,8 +8,8 @@ services:
     networks:
       - insecure-microservices
 
-  destruction-service:
-    build: ./destruction-service
+  salvation-service:
+    build: ./salvation-service
     ports:
       - "8001:8001"
     networks:

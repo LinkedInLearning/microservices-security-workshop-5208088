@@ -17,8 +17,8 @@ app.add_middleware(
 # Use Docker service name instead of localhost
 PLANET_SERVICE_URL = "http://planet-service:8000"
 
-@app.post("/destroy/{planet_id}")
-async def destroy_planet(planet_id: int):
+@app.post("/save/{planet_id}")
+async def save_planet(planet_id: int):
     try:
         # No input validation or rate limiting
         # No authentication or authorization
@@ -37,8 +37,8 @@ async def destroy_planet(planet_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Intentionally vulnerable endpoint - command injection vulnerability
-@app.post("/custom-destroy")
-async def custom_destroy(command: str):
+@app.post("/custom-save")
+async def custom_save(command: str):
     import subprocess
     try:
         # Vulnerable command execution

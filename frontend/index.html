@@ -201,7 +201,7 @@
     <script>
         // API URLs - using relative paths since we'll serve from the same origin
         const PLANET_SERVICE_URL = 'http://localhost:8000';
-        const DESTRUCTION_SERVICE_URL = 'http://localhost:8001';
+        const SALVATION_SERVICE_URL = 'http://localhost:8001';
         const CREATION_SERVICE_URL = 'http://localhost:8002';
 
         function showNotification(message, type = 'success') {
@@ -299,7 +299,7 @@
 
         async function destroyPlanet(planetId) {
             try {
-                const response = await fetch(`${DESTRUCTION_SERVICE_URL}/destroy/${planetId}`, {
+                const response = await fetch(`${SALVATION_SERVICE_URL}/save/${planetId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
