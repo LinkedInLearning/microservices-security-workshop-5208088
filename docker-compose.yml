@@ -7,17 +7,20 @@ services:
       - "8000:8000"
     volumes:
       - ./shared:/app/shared
+    environment:
+      - JWT_SECRET_KEY=your-secret-key-here
     networks:
       - insecure-microservices
 
-  destruction-service:
-    build: ./destruction-service
+  salvation-service:
+    build: ./salvation-service
     ports:
       - "8001:8001"
     volumes:
       - ./shared:/app/shared
     environment:
       - PLANET_SERVICE_URL=http://planet-service:8000
+      - JWT_SECRET_KEY=your-secret-key-here
     networks:
       - insecure-microservices
 
@@ -29,6 +32,7 @@ services:
       - ./shared:/app/shared
     environment:
       - PLANET_SERVICE_URL=http://planet-service:8000
+      - JWT_SECRET_KEY=your-secret-key-here
     networks:
       - insecure-microservices
 
@@ -38,6 +42,8 @@ services:
       - "8003:8003"
     volumes:
       - ./shared:/app/shared
+    environment:
+      - JWT_SECRET_KEY=your-secret-key-here
     networks:
       - insecure-microservices
 
@@ -48,7 +54,7 @@ services:
     environment:
       - REACT_APP_PLANET_SERVICE_URL=http://localhost:8000
       - REACT_APP_CREATION_SERVICE_URL=http://localhost:8002
-      - REACT_APP_DESTRUCTION_SERVICE_URL=http://localhost:8001
+      - REACT_APP_SALVATION_SERVICE_URL=http://localhost:8001
       - REACT_APP_AUTH_SERVICE_URL=http://localhost:8003
     networks:
       - insecure-microservices

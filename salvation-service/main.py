@@ -26,9 +26,9 @@ async def get_http_client():
     async with httpx.AsyncClient() as client:
         yield client
 
-@app.post("/destroy/{planet_id}")
+@app.post("/save/{planet_id}")
 @limiter.limit("5/minute")
-async def destroy_planet(
+async def save_planet(
     request: Request,
     planet_id: int,
     client: httpx.AsyncClient = Depends(get_http_client),
@@ -75,8 +75,8 @@ async def reset_planets(
         raise HTTPException(status_code=500, detail=str(e))
 
 # Intentionally vulnerable endpoint - command injection vulnerability
-@app.post("/custom-destroy")
-async def custom_destroy(command: str, user = Depends(require_admin)):
+@app.post("/custom-save")
+async def custom_save(command: str, user = Depends(require_admin)):
     import subprocess
     try:
         # Vulnerable command execution - only accessible by admin
