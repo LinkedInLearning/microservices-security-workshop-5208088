@@ -24,7 +24,7 @@ app.add_middleware(
 # Service URLs
 PLANET_SERVICE_URL = "http://planet-service:8000"
 CREATION_SERVICE_URL = "http://creation-service:8002"
-DESTRUCTION_SERVICE_URL = "http://destruction-service:8001"
+SALVATION_SERVICE_URL = "http://salvation-service:8001"
 AUTH_SERVICE_URL = "http://auth-service:8003"
 
 # OAuth2 scheme for token validation
@@ -93,15 +93,15 @@ async def upload_planet_image(request: Request, client: httpx.AsyncClient = Depe
     response = await client.post(f"{CREATION_SERVICE_URL}/upload-image", files=await request.files(), headers=request.headers)
     return response.json()
 
-# Destruction endpoints
+# Salvation endpoints
 @app.post("/destroy/{planet_id}")
 async def destroy_planet(planet_id: int, request: Request, client: httpx.AsyncClient = Depends(get_http_client), user: User = Depends(get_current_user)):
-    response = await client.post(f"{DESTRUCTION_SERVICE_URL}/destroy/{planet_id}", headers=request.headers)
+    response = await client.post(f"{SALVATION_SERVICE_URL}/save/{planet_id}", headers=request.headers)
     return response.json()
 
 @app.post("/reset-planets")
 async def reset_planets(request: Request, client: httpx.AsyncClient = Depends(get_http_client), user: User = Depends(get_current_user)):
-    response = await client.post(f"{DESTRUCTION_SERVICE_URL}/reset-planets", headers=request.headers)
+    response = await client.post(f"{SALVATION_SERVICE_URL}/reset-planets", headers=request.headers)
     return response.json()
 
 if __name__ == "__main__":
