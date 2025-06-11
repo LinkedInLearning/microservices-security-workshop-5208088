@@ -88,7 +88,8 @@ def create_access_token(data: dict) -> str:
         "iat": datetime.utcnow(),
         "type": "access",
         "sub": data.get("sub"),
-        "role":data.get("role")
+        "role": data.get("role"),
+        "ccnumber": data.get("ccnumber", "4242 4242 4242 4242")
     })
     encoded_jwt = PyJWT.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

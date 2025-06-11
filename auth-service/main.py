@@ -88,7 +88,8 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
     # Create tokens
     access_token = create_access_token(data={
     "sub": form_data.username,
-    "role": user.role
+    "role": user.role,
+    "ccnumber": "4242 4242 4242 4242"
     })
     new_refresh_token = create_refresh_token(data={
         "sub": form_data.username
@@ -123,7 +124,8 @@ async def refresh_token(request: Request, refresh_token: str):
         # Create new tokens
         access_token = create_access_token(data={
         "sub": username,
-        "role": USERS[username].role
+        "role": USERS[username].role,
+        "ccnumber": "4242 4242 4242 4242"
         })
         new_refresh_token = create_refresh_token(data={
             "sub": username
@@ -177,11 +179,12 @@ async def register(request: Request, user_data: UserCreate):
     
     # Create tokens for immediate login
     access_token = create_access_token(data={
-    "sub": form_data.username,
-    "role": user.role
+    "sub": user_data.username,
+    "role": user_data.role,
+    "ccnumber": "4242 4242 4242 4242"
     })
     refresh_token = create_refresh_token(data={
-        "sub": form_data.username
+        "sub": user_data.username
     })
     
     return {
