@@ -1,3 +1,10 @@
+# Microservices Security Workshop: From Build to Production
+This is the repository for the LinkedIn Learning course `Microservices Security Workshop: From Build to Production`. The full course is available from [LinkedIn Learning][lil-course-url].
+
+![lil-thumbnail-url]
+
+# Course Description
+
 # Insecure Microservices Demo
 
 A demonstration of various security vulnerabilities in a microservices architecture, featuring a planet management system.
@@ -114,4 +121,13 @@ If you encounter CORS issues:
 If you encounter any other issues:
 1. Check the console output of each service for error messages
 2. Ensure all dependencies are installed correctly
-3. Try restarting the services in the correct order 
+3. Try restarting the services in the correct order
+
+## Instructor
+James Berthoty
+Security Engineer Turned Analyst at Latio Tech
+
+[0]: # (Replace these placeholder URLs with actual course URLs)
+
+[lil-course-url]: https://www.linkedin.com/learning/microservices-security-workshop-from-build-to-production
+[lil-thumbnail-url]: https://media.licdn.com/dms/image/v2/D4E0DAQGr36V_9QGHpg/learning-public-crop_675_1200/B4EZflAVtsGcAg-/0/1751893761164?e=1753304400&v=beta&t=LH5uDA6rd8usOnwQcMcQWi6d9klJDHD1W34hzws5R0U
